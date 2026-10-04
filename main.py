@@ -2,7 +2,7 @@
 Viper Click Bot — /start va /help (aiogram 3.x)
 
 O'rnatish:
-    pip install -U aiogram
+    pip install -U aiogram aiohttp
 
 Ishga tushirish:
     export BOT_TOKEN="123456:ABC..."          (Windows: set BOT_TOKEN=...)
@@ -14,6 +14,7 @@ import logging
 import os
 from html import escape
 
+from aiohttp import web  # Render portini ushlab turish uchun
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -122,7 +123,6 @@ def help_keyboard() -> InlineKeyboardMarkup:
 # ---------- HANDLERLAR ----------
 @router.message(CommandStart())
 async def cmd_start(message: Message, command: CommandObject):
-    # t.me/ViperClickBot?start=XXXX  -> command.args == "XXXX"
     ref = command.args
     name = message.from_user.first_name if message.from_user else "do'st"
     await message.answer(
@@ -142,9 +142,24 @@ async def cb_help(call: CallbackQuery):
     await call.answer()
 
 
+# ---------- RENDER UCHUN SOXTA VEB-SERVER ----------
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get("/", lambda request: web.Response(text="Bot is running!"))
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.environ.get("PORT", 10000))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+
+
 # ---------- ISHGA TUSHIRISH ----------
 async def main():
     logging.basicConfig(level=logging.INFO)
+    
+    # Render uchun veb-serverni parallel ishga tushiramiz
+    await start_web_server()
+
     bot = Bot(
         token=BOT_TOKEN,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
