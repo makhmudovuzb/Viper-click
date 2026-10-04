@@ -28,7 +28,7 @@ from aiogram.types import (
 )
 
 # ============ SOZLAMALAR ============
-BOT_TOKEN = os.getenv("BOT_TOKEN", "8862272688:AAGDkx_t1omGz6ecVHpkm04nLFj8Qre9iM0")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "8902470609:AAGbpTMFkQJwvulkSll3HCLjkOIckkoATa8")
 MINIAPP_LINK = "https://t.me/ViperClickBot?startapp=ref_w2ng4fr9s2"  # mini app havolasi
 MINIAPP_BASE = "https://t.me/ViperClickBot?startapp="
 DEV_USERNAME = "Makhmudov_h001"                       # @ belgisiz
