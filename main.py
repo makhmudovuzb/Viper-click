@@ -52,9 +52,9 @@ ADMIN_PASSWORD = "MH2013MH"
 
 # MAJBURIY OBUNA KANALLARI (Kanal ID va taklif havolalari)
 CHANNELS = [
-    {"id": -1004336927865, "link": "https://t.me/c/4336927865", "name": "1-Kanal"},
-    {"id": -1004375273530, "link": "https://t.me/c/4375273530", "name": "2-Kanal"},
-    {"id": -1003976183058, "link": "https://t.me/c/3976183058", "name": "3-Kanal"},
+    {"id": -1004336927865, "link": "https://t.me/+dlgHr-FEdGlmNTAy", "name": "1-Kanal"},
+    {"id": -1004375273530, "link": "https://t.me/+EiaU473srG5hM2Uy", "name": "2-Kanal"},
+    {"id": -1003976183058, "link": "https://t.me/+8NEOsZ0LnRk5NjNi", "name": "3-Kanal"},
 ]
 
 
@@ -97,7 +97,6 @@ async def check_subscription(bot: Bot, user_id: int) -> bool:
                 return False
         except Exception as e:
             logging.error(f"Kanal tekshirish xatosi {channel['id']}: {e}")
-            # Agar bot kanalda admin bo'lmasa yoki xato bersa, tekshiruvdan o'tkazib yuboradi
             continue
     return True
 
@@ -226,7 +225,6 @@ async def cmd_start(message: Message, command: CommandObject, state: FSMContext,
     await state.clear()
     user_id = message.from_user.id if message.from_user else 0
 
-    # Obuna bo'lganligini tekshirish
     is_subscribed = await check_subscription(bot, user_id)
     ref = command.args
 
