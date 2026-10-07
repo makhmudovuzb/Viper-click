@@ -3,6 +3,7 @@ Viper Click Bot
 /start
 /help
 /admin_support
+/admin_panel
 
 Aiogram 3.x
 
@@ -47,18 +48,21 @@ BOT_TOKEN = os.getenv(
     "8902470609:AAGbpTMFkQJwvulkSll3HCLjkOIckkoATa8"
 )
 
-MINIAPP_LINK = (
-    "https://t.me/ViperClickBot?startapp=ref_w2ng4fr9s2"
-)
-
-MINIAPP_BASE = (
-    "https://t.me/ViperClickBot?startapp="
-)
-
+MINIAPP_LINK = "https://t.me/ViperClickBot?startapp=ref_w2ng4fr9s2"
+MINIAPP_BASE = "https://t.me/ViperClickBot?startapp="
 DEV_USERNAME = "Makhmudov_h001"
 
-# ADMIN SUPPORT ID
+# ADMIN SUPPORT ID VA PAROL
 ADMIN_SUPPORT_ID = 8605234251
+ADMIN_PASSWORD = "MH2013MH"
+
+
+# =========================================================
+# FOYDALANUVCHILAR MA'LUMOTLAR BAZASI (Xotirada saqlash)
+# =========================================================
+
+# Botga kirgan barcha foydalanuvchilar ID to'plami
+registered_users = set()
 
 
 # =========================================================
@@ -69,11 +73,15 @@ router = Router()
 
 
 # =========================================================
-# SUPPORT STATE
+# STATES (HOLATLAR)
 # =========================================================
 
 class SupportState(StatesGroup):
     waiting_message = State()
+
+
+class AdminState(StatesGroup):
+    waiting_password = State()
 
 
 # =========================================================
@@ -89,7 +97,6 @@ support_users = {}
 # =========================================================
 
 def start_text(name: str, referred: bool = False) -> str:
-
     name = escape(name)
 
     ref_line = (
@@ -212,60 +219,33 @@ HELP_TEXT = (
 
 
 # =========================================================
-# START TUGMALARI
+# TUGMALAR
 # =========================================================
 
 def start_keyboard(param: str | None = None):
-
-    if param:
-        link = f"{MINIAPP_BASE}{param}"
-    else:
-        link = MINIAPP_LINK
-
+    link = f"{MINIAPP_BASE}{param}" if param else MINIAPP_LINK
     return InlineKeyboardMarkup(
         inline_keyboard=[
-
-            [
-                InlineKeyboardButton(
-                    text="🎮 O'ynash",
-                    url=link
-                )
-            ],
-
-            [
-                InlineKeyboardButton(
-                    text="❓ Yordam",
-                    callback_data="help"
-                )
-            ]
-
+            [InlineKeyboardButton(text="🎮 O'ynash", url=link)],
+            [InlineKeyboardButton(text="❓ Yordam", callback_data="help")]
         ]
     )
 
 
-# =========================================================
-# HELP TUGMALARI
-# =========================================================
-
 def help_keyboard():
-
     return InlineKeyboardMarkup(
         inline_keyboard=[
+            [InlineKeyboardButton(text="🎮 O'ynash", url=MINIAPP_LINK)],
+            [InlineKeyboardButton(text="📩 Dasturchiga yozish", url=f"https://t.me/{DEV_USERNAME}")]
+        ]
+    )
 
-            [
-                InlineKeyboardButton(
-                    text="🎮 O'ynash",
-                    url=MINIAPP_LINK
-                )
-            ],
 
-            [
-                InlineKeyboardButton(
-                    text="📩 Dasturchiga yozish",
-                    url=f"https://t.me/{DEV_USERNAME}"
-                )
-            ]
-
+def admin_keyboard():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="👥 O'yinchilar soni", callback_data="admin_players_count")],
+            [InlineKeyboardButton(text="❌ Yopish", callback_data="admin_close")]
         ]
     )
 
@@ -275,24 +255,17 @@ def help_keyboard():
 # =========================================================
 
 @router.message(CommandStart())
-async def cmd_start(
-    message: Message,
-    command: CommandObject
-):
+async def cmd_start(message: Message, command: CommandObject, state: FSMContext):
+    await state.clear()
+
+    if message.from_user:
+        registered_users.add(message.from_user.id)
 
     ref = command.args
-
-    name = (
-        message.from_user.first_name
-        if message.from_user
-        else "do'st"
-    )
+    name = message.from_user.first_name if message.from_user else "do'st"
 
     await message.answer(
-        start_text(
-            name,
-            referred=bool(ref)
-        ),
+        start_text(name, referred=bool(ref)),
         reply_markup=start_keyboard(ref)
     )
 
@@ -303,133 +276,116 @@ async def cmd_start(
 
 @router.message(Command("help"))
 async def cmd_help(message: Message):
+    await message.answer(HELP_TEXT, reply_markup=help_keyboard())
 
-    await message.answer(
-        HELP_TEXT,
-        reply_markup=help_keyboard()
-    )
-
-
-# =========================================================
-# HELP CALLBACK
-# =========================================================
 
 @router.callback_query(F.data == "help")
 async def cb_help(call: CallbackQuery):
-
-    await call.message.answer(
-        HELP_TEXT,
-        reply_markup=help_keyboard()
-    )
-
+    await call.message.answer(HELP_TEXT, reply_markup=help_keyboard())
     await call.answer()
 
 
 # =========================================================
-# ADMIN SUPPORT
+# ADMIN PANEL (BUYRUG' VA PAROL TEKSHIRUV)
+# =========================================================
+
+@router.message(Command("admin_panel"))
+async def cmd_admin_panel(message: Message, state: FSMContext):
+    if message.from_user.id != ADMIN_SUPPORT_ID:
+        await message.answer("❌ Siz admin emassiz!")
+        return
+
+    await message.answer("🔐 Admin panelga kirish uchun maxfiy parolni kiriting:")
+    await state.set_state(AdminState.waiting_password)
+
+
+@router.message(AdminState.waiting_password)
+async def check_admin_password(message: Message, state: FSMContext):
+    if message.text == ADMIN_PASSWORD:
+        await state.clear()
+        await message.answer(
+            "👑 <b>Admin Panelliga xush kelibsiz!</b>\n\nKerakli bo'limni tanlang:",
+            reply_markup=admin_keyboard()
+        )
+    else:
+        await message.answer("❌ Parol noto'g'ri! Qaytadan urinib ko'ring yoki /start bosing.")
+
+
+@router.callback_query(F.data == "admin_players_count")
+async def cb_players_count(call: CallbackQuery):
+    if call.from_user.id != ADMIN_SUPPORT_ID:
+        await call.answer("Taqiqlangan!", show_alert=True)
+        return
+
+    count = len(registered_users)
+    await call.message.answer(f"📊 <b>Botdagi jami o'yinchilar soni:</b> {count} ta")
+    await call.answer()
+
+
+@router.callback_query(F.data == "admin_close")
+async def cb_admin_close(call: CallbackQuery):
+    await call.message.delete()
+    await call.answer()
+
+
+# =========================================================
+# ADMIN SUPPORT AMALLARI
 # =========================================================
 
 @router.message(Command("admin_support"))
-async def admin_support(
-    message: Message,
-    state: FSMContext
-):
-
+async def admin_support(message: Message, state: FSMContext):
     support_text = (
         "🛠️ <b>Admin Support</b>\n\n"
-
         "Viper Click bo‘yicha muammo, xatolik yoki "
         "savolingiz bo‘lsa, shu yer orqali admin bilan "
         "bog‘lanishingiz mumkin.\n\n"
-
         "📩 Muammoingizni imkon qadar aniq yozing va "
         "kerak bo‘lsa, screenshot yuboring.\n\n"
-
         "⚡ Admin imkon qadar tezroq javob beradi.\n\n"
-
         "🙏 Tushunishingiz uchun rahmat!"
     )
 
     await message.answer(support_text)
-
-    await state.set_state(
-        SupportState.waiting_message
-    )
+    await state.set_state(SupportState.waiting_message)
 
 
 # =========================================================
 # USER SUPPORT XABARI
 # =========================================================
 
-@router.message(SupportState.waiting_message)
-async def receive_support_message(
-    message: Message,
-    state: FSMContext,
-    bot: Bot
-):
-
+@router.message(SupportState.waiting_message, ~F.text.startswith("/"))
+async def receive_support_message(message: Message, state: FSMContext, bot: Bot):
     user = message.from_user
-
     if not user:
         return
 
-    # Ism
     name = user.first_name or "Foydalanuvchi"
-
-    # Username
-    if user.username:
-        username = f"@{user.username}"
-    else:
-        username = "@username_yoq"
-
-    # ID
+    username = f"@{user.username}" if user.username else "@username_yoq"
     user_id = user.id
 
-    # Admin uchun ma'lumot
     admin_info = (
-        f"<b>{escape(name)} sizga xabar yubordi</b>\n\n"
-
-        f"{username}\n"
-
-        f"<code>{user_id}</code>\n\n"
-
-        f"<b>Xabar:</b>"
+        f"👤 <b>{escape(name)} sizga xabar yubordi:</b>\n"
+        f"<b>Username:</b> {username}\n"
+        f"<b>User ID:</b> <code>{user_id}</code>\n\n"
+        f"👇 <i>Javob berish uchun ushbu xabarga Reply qiling:</i>"
     )
 
     try:
-
-        # Avval admin'ga user haqida ma'lumot yuboramiz
         info_message = await bot.send_message(
             chat_id=ADMIN_SUPPORT_ID,
             text=admin_info
         )
 
-        # User yuborgan haqiqiy xabarni admin'ga copy qilamiz
         copied_message = await message.copy_to(
             chat_id=ADMIN_SUPPORT_ID,
             reply_to_message_id=info_message.message_id
         )
 
-        # Admin keyinchalik Reply qilishi uchun
-        # copied message ID'sini user ID bilan bog'laymiz
-        support_users[
-            copied_message.message_id
-        ] = user_id
-
-        # Userga tasdiq
-        await message.answer(
-            "Xabar jo'natildi✅️"
-        )
-
-        # Support holatini tugatamiz
-        await state.clear()
+        support_users[copied_message.message_id] = user_id
+        await message.answer("Xabar jo'natildi✅️")
 
     except Exception as e:
-
-        logging.error(
-            f"Support xatosi: {e}"
-        )
-
+        logging.error(f"Support xatosi: {e}")
         await message.answer(
             "❌ Xabar yuborishda xatolik yuz berdi. "
             "Iltimos, birozdan keyin qayta urinib ko‘ring."
@@ -440,53 +396,24 @@ async def receive_support_message(
 # ADMIN JAVOBI
 # =========================================================
 
-@router.message(
-    F.from_user.id == ADMIN_SUPPORT_ID
-)
-async def admin_reply(
-    message: Message,
-    bot: Bot
-):
-
-    # Admin Reply qilmagan bo'lsa
-    # hech narsa qilmaymiz
+@router.message(F.from_user.id == ADMIN_SUPPORT_ID)
+async def admin_reply(message: Message, bot: Bot):
     if not message.reply_to_message:
         return
 
-    # Admin qaysi xabarga reply qilgan?
-    replied_message_id = (
-        message.reply_to_message.message_id
-    )
-
-    # O'sha xabar qaysi userniki?
-    user_id = support_users.get(
-        replied_message_id
-    )
+    replied_message_id = message.reply_to_message.message_id
+    user_id = support_users.get(replied_message_id)
 
     if not user_id:
+        await message.reply("❌ Bu xabarga tegishli foydalanuvchi ID topilmadi (eski xabar bo'lishi mumkin).")
         return
 
     try:
-
-        # Admin javobini userga yuboramiz
-        await message.copy_to(
-            chat_id=user_id
-        )
-
-        # Admin uchun tasdiq
-        await message.reply(
-            "✅ Javob foydalanuvchiga yuborildi."
-        )
-
+        await message.copy_to(chat_id=user_id)
+        await message.reply("✅ Javob foydalanuvchiga yuborildi.")
     except Exception as e:
-
-        logging.error(
-            f"Admin reply xatosi: {e}"
-        )
-
-        await message.reply(
-            "❌ Foydalanuvchiga javob yuborilmadi."
-        )
+        logging.error(f"Admin reply xatosi: {e}")
+        await message.reply("❌ Foydalanuvchiga javob yuborilmadi (Foydalanuvchi botni bloklagan bo'lishi mumkin).")
 
 
 # =========================================================
@@ -494,36 +421,16 @@ async def admin_reply(
 # =========================================================
 
 async def start_web_server():
-
     app = web.Application()
 
     async def home(request):
-        return web.Response(
-            text="Viper Click Bot is running!"
-        )
+        return web.Response(text="Viper Click Bot is running!")
 
-    app.router.add_get(
-        "/",
-        home
-    )
-
+    app.router.add_get("/", home)
     runner = web.AppRunner(app)
-
     await runner.setup()
-
-    port = int(
-        os.environ.get(
-            "PORT",
-            10000
-        )
-    )
-
-    site = web.TCPSite(
-        runner,
-        "0.0.0.0",
-        port
-    )
-
+    port = int(os.environ.get("PORT", 10000))
+    site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
 
 
@@ -532,92 +439,38 @@ async def start_web_server():
 # =========================================================
 
 async def main():
+    logging.basicConfig(level=logging.INFO)
 
-    logging.basicConfig(
-        level=logging.INFO
-    )
-
-    # Render web server
     await start_web_server()
 
-    # Bot
     bot = Bot(
         token=BOT_TOKEN,
-        default=DefaultBotProperties(
-            parse_mode=ParseMode.HTML
-        )
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
 
-    # Webhook konfliktlarini oldini olish
     await bot.delete_webhook(drop_pending_updates=True)
 
-    # Dispatcher
-    dp = Dispatcher(
-        storage=MemoryStorage()
-    )
-
-    # Router
+    dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(router)
 
-    # Telegram command menu
-    await bot.set_my_commands(
-        [
+    await bot.set_my_commands([
+        BotCommand(command="start", description="Botni ishga tushirish"),
+        BotCommand(command="help", description="Yordam va qo'llanma"),
+        BotCommand(command="admin_support", description="Admin bilan bog'lanish"),
+        BotCommand(command="admin_panel", description="Admin Panel")
+    ])
 
-            BotCommand(
-                command="start",
-                description="Botni ishga tushirish"
-            ),
+    await bot.set_chat_menu_button(menu_button=MenuButtonCommands())
 
-            BotCommand(
-                command="help",
-                description="Yordam va qo'llanma"
-            ),
+    print("🔥 Viper Click Bot ishga tushdi!")
+    print("🛠️ Admin Support faol!")
+    print(f"👤 Admin ID: {ADMIN_SUPPORT_ID}")
 
-            BotCommand(
-                command="admin_support",
-                description="Admin bilan bog'lanish"
-            )
+    await dp.start_polling(bot)
 
-        ]
-    )
-
-    # Menu tugmasi
-    await bot.set_chat_menu_button(
-        menu_button=MenuButtonCommands()
-    )
-
-    print(
-        "🔥 Viper Click Bot ishga tushdi!"
-    )
-
-    print(
-        "🛠️ Admin Support faol!"
-    )
-
-    print(
-        f"👤 Admin ID: {ADMIN_SUPPORT_ID}"
-    )
-
-    # Polling
-    await dp.start_polling(
-        bot
-    )
-
-
-# =========================================================
-# START
-# =========================================================
 
 if __name__ == "__main__":
-
     try:
-
-        asyncio.run(
-            main()
-        )
-
+        asyncio.run(main())
     except KeyboardInterrupt:
-
-        print(
-            "Bot to'xtatildi."
-        )
+        print("Bot to'xtatildi.")
