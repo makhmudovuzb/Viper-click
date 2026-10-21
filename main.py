@@ -38,10 +38,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 # SOZLAMALAR
 # =========================================================
 
-BOT_TOKEN = os.getenv(
-    "BOT_TOKEN",
-    "YANGI_TOKENINGNI_SHU_YERGA_QO'Y"
-)
+BOT_TOKEN = "8902470609:AAGbpTMFkQJwvulkSll3HCLjkOIckkoATa8"
 
 WEBAPP_URL = "https://viper-click-enhancednew.vercel.app/"
 DEV_USERNAME = "Makhmudov_h001"
