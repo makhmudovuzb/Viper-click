@@ -47,13 +47,6 @@ DEV_USERNAME = "Makhmudov_h001"
 ADMIN_SUPPORT_ID = 8605234251
 ADMIN_PASSWORD = "MH2013MH"
 
-# MAJBURIY OBUNA KANALLARI
-CHANNELS = [
-    {"id": -1004336927865, "link": "https://t.me/+dlgHr-FEdGlmNTAy", "name": "1-Kanal"},
-    {"id": -1004375273530, "link": "https://t.me/+EiaU473srG5hM2Uy", "name": "2-Kanal"},
-    {"id": -1003976183058, "link": "https://t.me/+8NEOsZ0LnRk5NjNi", "name": "3-Kanal"},
-]
-
 
 # =========================================================
 # FOYDALANUVCHILAR BAZASI VA XOTIRA
@@ -77,36 +70,6 @@ class SupportState(StatesGroup):
 class AdminState(StatesGroup):
     waiting_password = State()
     waiting_broadcast_message = State()
-
-
-# =========================================================
-# OBUNANI TEKSHIRISH FUNKSIYASI
-# =========================================================
-
-async def check_subscription(bot: Bot, user_id: int) -> bool:
-    if user_id == ADMIN_SUPPORT_ID:
-        return True
-
-    for channel in CHANNELS:
-        try:
-            member = await bot.get_chat_member(chat_id=channel["id"], user_id=user_id)
-            if member.status in ["left", "kicked"]:
-                return False
-        except Exception as e:
-            logging.error(f"Kanal tekshirish xatosi {channel['id']}: {e}")
-            continue
-    return True
-
-
-def sub_keyboard(ref_param: str | None = None):
-    buttons = []
-    for idx, ch in enumerate(CHANNELS, 1):
-        buttons.append([InlineKeyboardButton(text=f"📢 {idx}-kanalga obuna bo'lish", url=ch["link"])])
-    
-    cb_data = f"check_sub:{ref_param}" if ref_param else "check_sub:none"
-    buttons.append([InlineKeyboardButton(text="🔄 Tekshirish ✅", callback_data=cb_data)])
-    
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 # =========================================================
@@ -166,22 +129,11 @@ def admin_keyboard():
 # =========================================================
 
 @router.message(CommandStart())
-async def cmd_start(message: Message, command: CommandObject, state: FSMContext, bot: Bot):
+async def cmd_start(message: Message, command: CommandObject, state: FSMContext):
     await state.clear()
-    user_id = message.from_user.id if message.from_user else 0
-
-    is_subscribed = await check_subscription(bot, user_id)
-    ref = command.args
-
-    if not is_subscribed:
-        await message.answer(
-            "⚠️ <b>Botdan va Mini App'dan foydalanish uchun quyidagi kanallarga obuna bo'ling:</b>",
-            reply_markup=sub_keyboard(ref)
-        )
-        return
-
+    
     if message.from_user:
-        registered_users.add(user_id)
+        registered_users.add(message.from_user.id)
 
     await message.answer(
         "⚡ <b>VIPER CLICK</b>\n\n"
@@ -193,39 +145,11 @@ async def cmd_start(message: Message, command: CommandObject, state: FSMContext,
 
 
 # =========================================================
-# OBUNANI TEKSHIRISH CALLBACK
-# =========================================================
-
-@router.callback_query(F.data.startswith("check_sub"))
-async def cb_check_sub(call: CallbackQuery, bot: Bot):
-    user_id = call.from_user.id
-    is_subscribed = await check_subscription(bot, user_id)
-
-    if is_subscribed:
-        registered_users.add(user_id)
-        await call.message.delete()
-        await call.message.answer(
-            "⚡ <b>VIPER CLICK</b>\n\n"
-            "Xush kelibsiz!\n"
-            "Coin to'plang, bonuslarni oling va "
-            "reytingda yuqoriga ko'tariling!",
-            reply_markup=start_keyboard()
-        )
-        await call.answer("✅ Rahmat! Barcha kanallarga obuna bo'ldingiz.", show_alert=True)
-    else:
-        await call.answer("❌ Hamma kanallarga obuna bo'lmadingiz! Iltimos, qayta tekshiring.", show_alert=True)
-
-
-# =========================================================
 # HELP
 # =========================================================
 
 @router.message(Command("help"))
-async def cmd_help(message: Message, bot: Bot):
-    if not await check_subscription(bot, message.from_user.id):
-        await message.answer("⚠️ Botdan foydalanish uchun kanallarga obuna bo'ling!", reply_markup=sub_keyboard())
-        return
-
+async def cmd_help(message: Message):
     await message.answer(
         "🛠️ <b>Viper Click — Yordam</b>\n\n"
         "/start — Botni ochish\n"
@@ -334,11 +258,7 @@ async def cb_admin_close(call: CallbackQuery):
 # =========================================================
 
 @router.message(Command("admin_support"))
-async def admin_support(message: Message, state: FSMContext, bot: Bot):
-    if not await check_subscription(bot, message.from_user.id):
-        await message.answer("⚠️ Botdan foydalanish uchun kanallarga obuna bo'ling!", reply_markup=sub_keyboard())
-        return
-
+async def admin_support(message: Message, state: FSMContext):
     support_text = (
         "🛠️ <b>Admin Support</b>\n\n"
         "Viper Click bo‘yicha muammo, xatolik yoki "
