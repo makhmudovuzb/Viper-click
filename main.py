@@ -1,5 +1,5 @@
 """
-Viper Click Bot
+Viper Click WebApp Bot
 /start
 /help
 /admin_support
@@ -26,6 +26,7 @@ from aiogram.types import (
     InlineKeyboardMarkup,
     MenuButtonCommands,
     Message,
+    WebAppInfo
 )
 
 from aiogram.fsm.context import FSMContext
@@ -39,18 +40,17 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 BOT_TOKEN = os.getenv(
     "BOT_TOKEN",
-    "8902470609:AAGbpTMFkQJwvulkSll3HCLjkOIckkoATa8"
+    "YANGI_TOKENINGNI_SHU_YERGA_QO'Y"
 )
 
-MINIAPP_LINK = "https://t.me/ViperClickBot?startapp=ref_w2ng4fr9s2"
-MINIAPP_BASE = "https://t.me/ViperClickBot?startapp="
+WEBAPP_URL = "https://viper-click-enhancednew.vercel.app/"
 DEV_USERNAME = "Makhmudov_h001"
 
 # ADMIN SUPPORT ID VA PAROL
 ADMIN_SUPPORT_ID = 8605234251
 ADMIN_PASSWORD = "MH2013MH"
 
-# MAJBURIY OBUNA KANALLARI (Kanal ID va taklif havolalari)
+# MAJBURIY OBUNA KANALLARI
 CHANNELS = [
     {"id": -1004336927865, "link": "https://t.me/+dlgHr-FEdGlmNTAy", "name": "1-Kanal"},
     {"id": -1004375273530, "link": "https://t.me/+EiaU473srG5hM2Uy", "name": "2-Kanal"},
@@ -59,7 +59,7 @@ CHANNELS = [
 
 
 # =========================================================
-# FOYDALANUVCHILAR MA'LUMOTLAR BAZASI
+# FOYDALANUVCHILAR BAZASI VA XOTIRA
 # =========================================================
 
 registered_users = set()
@@ -113,86 +113,24 @@ def sub_keyboard(ref_param: str | None = None):
 
 
 # =========================================================
-# START MATNI
-# =========================================================
-
-def start_text(name: str, referred: bool = False) -> str:
-    name = escape(name)
-    ref_line = (
-        "\n🤝 Siz do'stingizning havolasi orqali keldingiz. "
-        "Ro'yxatdan o'tganingizdan so'ng u bonus oladi!\n"
-        if referred
-        else ""
-    )
-
-    return (
-        f"🐍 <b>Viper Click</b> ga xush kelibsiz, <b>{name}</b>!\n"
-        f"{ref_line}\n"
-        "Bu yerda har bir bosish sizga token olib keladi. "
-        "Token yig'ing, o'yinlarda omadingizni sinang va "
-        "<b>Viper Legend</b> darajasigacha ko'tarilib, "
-        "reytingda yuqoriga chiqing! 🏆\n\n"
-        "<b>Sizni nimalar kutmoqda:</b>\n"
-        "⚡ <b>Tap-to-earn</b> — bosing, token ishlang. Zaryad o'zi tiklanadi\n"
-        "📈 <b>Trading</b> — narx o'sadimi yoki tushadimi? To'g'ri topsangiz ×1.9\n"
-        "🏢 <b>Biznes</b> — 10 ta biznesga investitsiya qiling\n"
-        "🎲 <b>Qora quti</b> va 🗃 <b>Qutilar markazi</b> — tumorlar va sovrinlar\n"
-        "🏦 <b>Bank</b> — kredit va depozit bilan balansni oshiring\n"
-        "🎁 <b>Kunlik bonus</b> — har kuni kiring, 7 kunlik seriya oxirida katta sovg'a\n"
-        "💌 <b>Sovg'a</b> — do'stingizga kod orqali token yuboring\n"
-        "👥 <b>Do'stlar</b> — har bir taklif qilingan do'st uchun +200 token\n\n"
-        "🎟 Promo kodingiz bormi? Uni <b>Bosh</b> sahifada kiriting.\n\n"
-        "Boshlash uchun pastdagi tugmani bosing 👇"
-    )
-
-
-# =========================================================
-# HELP MATNI
-# =========================================================
-
-HELP_TEXT = (
-    "❓ <b>Viper Click — yordam</b>\n\n"
-    "<b>📱 Pastki menyu</b>\n"
-    "🏠 <b>Bosh</b> — bosib token ishlash, kunlik bonus, promo kod, tumorlar\n"
-    "🎲 <b>O'yin</b> — Ko'paytirish, Trading, Biznes, Qora quti, Qutilar markazi, Bank\n"
-    "💌 <b>Sovg'a</b> — do'stga token yuborish va kelgan kodni kiritish\n"
-    "🏆 <b>Reyting</b> — eng kuchli o'yinchilar ro'yxati\n"
-    "👥 <b>Do'stlar</b> — shaxsiy havola va taklif qilinganlar soni\n\n"
-    "<b>⚡ Token qanday ishlanadi?</b>\n"
-    "Ekranga bosing — har bosishda token olasiz. Har bosish zaryad sarflaydi, "
-    "zaryad esa har soniyada tiklanadi. Tumorlar va boostlar daromadni oshiradi.\n\n"
-    "<b>🎮 O'yinlar</b>\n"
-    "• O'yinlar balans <b>1000 token</b> ga yetganda ochiladi\n"
-    "• <b>Trading</b> — har 12 soniyada yangi raund, yo'nalishni to'g'ri topsangiz ×1.9\n"
-    "• <b>Biznes</b> — raund har 20 soniyada, natija barcha o'yinchilar uchun bir xil\n"
-    "• <b>Qora quti</b> — 3 ta quti, kam tiksangiz yutish osonroq\n"
-    "• <b>Bank</b> — kredit muddatida qaytarilmasa, balansdan ushlanadi. "
-    "Depozitda ko'p tiksangiz foiz pastroq, muddat uzunroq\n\n"
-    "<b>🎁 Bonuslar</b>\n"
-    "• <b>Kunlik bonus</b> — 7 kun ketma-ket kiring, 7-kuni eng katta sovg'a\n"
-    "• <b>Promo kod</b> — Bosh sahifada kiriting, bir marta ishlaydi\n"
-    "• <b>Do'st taklif qilish</b> — har bir do'st uchun +200 token\n\n"
-    "<b>🏅 Unvonlar</b>\n"
-    "Balansingiz oshgani sari unvon ham o'sadi: 🐣 Yangi o'yinchi → 🥉 Bronza → "
-    "🥈 Kumush → 🥇 Oltin → 💠 Platina → 💎 Olmos → 👑 Usta → 🔥 Afsona → "
-    "🐍 Viper Legend → 🌟 O'lmas Viper\n\n"
-    "<b>⚠️ Qoidalar</b>\n"
-    "Avtoklikker yoki bot ishlatish taqiqlanadi. Aniqlansa, token jarima va "
-    "<b>1 soatlik ban</b> beriladi. Halol o'ynang!\n\n"
-    f"<b>📩 Aloqa:</b> muammo, savol yoki taklif bo'lsa @{DEV_USERNAME} ga yozing."
-)
-
-
-# =========================================================
 # TUGMALAR
 # =========================================================
 
-def start_keyboard(param: str | None = None):
-    link = f"{MINIAPP_BASE}{param}" if param else MINIAPP_LINK
+def start_keyboard():
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🎮 O'ynash", url=link)],
-            [InlineKeyboardButton(text="❓ Yordam", callback_data="help")]
+            [
+                InlineKeyboardButton(
+                    text="🎮 Viper Click'ni ochish",
+                    web_app=WebAppInfo(url=WEBAPP_URL)
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="ℹ️ Yordam",
+                    callback_data="help"
+                )
+            ]
         ]
     )
 
@@ -200,8 +138,18 @@ def start_keyboard(param: str | None = None):
 def help_keyboard():
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🎮 O'ynash", url=MINIAPP_LINK)],
-            [InlineKeyboardButton(text="📩 Dasturchiga yozish", url=f"https://t.me/{DEV_USERNAME}")]
+            [
+                InlineKeyboardButton(
+                    text="🎮 Viper Click'ni ochish",
+                    web_app=WebAppInfo(url=WEBAPP_URL)
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="📩 Dasturchiga yozish",
+                    url=f"https://t.me/{DEV_USERNAME}"
+                )
+            ]
         ]
     )
 
@@ -238,11 +186,12 @@ async def cmd_start(message: Message, command: CommandObject, state: FSMContext,
     if message.from_user:
         registered_users.add(user_id)
 
-    name = message.from_user.first_name if message.from_user else "do'st"
-
     await message.answer(
-        start_text(name, referred=bool(ref)),
-        reply_markup=start_keyboard(ref)
+        "⚡ <b>VIPER CLICK</b>\n\n"
+        "Xush kelibsiz!\n"
+        "Coin to'plang, bonuslarni oling va "
+        "reytingda yuqoriga ko'tariling!",
+        reply_markup=start_keyboard()
     )
 
 
@@ -255,17 +204,15 @@ async def cb_check_sub(call: CallbackQuery, bot: Bot):
     user_id = call.from_user.id
     is_subscribed = await check_subscription(bot, user_id)
 
-    param = call.data.split(":")[1]
-    ref_param = None if param == "none" else param
-
     if is_subscribed:
         registered_users.add(user_id)
-        name = call.from_user.first_name or "do'st"
-        
         await call.message.delete()
         await call.message.answer(
-            start_text(name, referred=bool(ref_param)),
-            reply_markup=start_keyboard(ref_param)
+            "⚡ <b>VIPER CLICK</b>\n\n"
+            "Xush kelibsiz!\n"
+            "Coin to'plang, bonuslarni oling va "
+            "reytingda yuqoriga ko'tariling!",
+            reply_markup=start_keyboard()
         )
         await call.answer("✅ Rahmat! Barcha kanallarga obuna bo'ldingiz.", show_alert=True)
     else:
@@ -281,13 +228,23 @@ async def cmd_help(message: Message, bot: Bot):
     if not await check_subscription(bot, message.from_user.id):
         await message.answer("⚠️ Botdan foydalanish uchun kanallarga obuna bo'ling!", reply_markup=sub_keyboard())
         return
-    await message.answer(HELP_TEXT, reply_markup=help_keyboard())
+
+    await message.answer(
+        "🛠️ <b>Viper Click — Yordam</b>\n\n"
+        "/start — Botni ochish\n"
+        "/help — Yordam\n"
+        "/admin_support — Admin bilan bog'lanish",
+        reply_markup=help_keyboard()
+    )
 
 
 @router.callback_query(F.data == "help")
-async def cb_help(call: CallbackQuery):
-    await call.message.answer(HELP_TEXT, reply_markup=help_keyboard())
-    await call.answer()
+async def help_callback(callback: CallbackQuery):
+    await callback.answer()
+    await callback.message.answer(
+        "Botni ishlatish uchun /start bosing "
+        "va o'yinni oching."
+    )
 
 
 # =========================================================
@@ -460,14 +417,14 @@ async def admin_reply(message: Message, bot: Bot):
 
 
 # =========================================================
-# RENDER UCHUN WEB SERVER
+# RENDER UCHUN WEB SERVER (24/7 ISHLASHI UCHUN)
 # =========================================================
 
 async def start_web_server():
     app = web.Application()
 
     async def home(request):
-        return web.Response(text="Viper Click Bot is running!")
+        return web.Response(text="Viper Click WebApp Bot is running!")
 
     app.router.add_get("/", home)
     runner = web.AppRunner(app)
@@ -478,17 +435,20 @@ async def start_web_server():
 
 
 # =========================================================
-# BOTNI ISHGA TUSHIRISH
+# MAIN
 # =========================================================
 
 async def main():
     logging.basicConfig(level=logging.INFO)
 
+    # Render portini ushlab turish uchun veb-serverni ishga tushiramiz
     await start_web_server()
 
     bot = Bot(
         token=BOT_TOKEN,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+        default=DefaultBotProperties(
+            parse_mode=ParseMode.HTML
+        )
     )
 
     await bot.delete_webhook(drop_pending_updates=True)
@@ -505,15 +465,13 @@ async def main():
 
     await bot.set_chat_menu_button(menu_button=MenuButtonCommands())
 
-    print("🔥 Viper Click Bot ishga tushdi!")
-    print("🛠️ Admin Support faol!")
-    print(f"👤 Admin ID: {ADMIN_SUPPORT_ID}")
+    print("🔥 Viper Click WebApp Bot ishga tushdi!")
 
-    await dp.start_polling(bot)
+    try:
+        await dp.start_polling(bot)
+    finally:
+        await bot.session.close()
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("Bot to'xtatildi.")
+    asyncio.run(main())
